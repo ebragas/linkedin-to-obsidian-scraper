@@ -6,7 +6,6 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from markdownify import markdownify
-# import pickle
 
 from pkg.read_urls import get_urls
 from obsidian.core import Obsidian
@@ -14,24 +13,15 @@ from obsidian.core import Obsidian
 
 # globals
 COOKIE_PATH = "data/cookies.txt"
-JOB_POST_NOTE_PATH = "job_descriptions/"
-COMPANY_NOTE_PATH = "companies/"
+JOB_POST_NOTE_PATH = "data/job_search/job_descriptions/"
+COMPANY_NOTE_PATH = "data/job_search/companies/"
 
 username = os.getenv('LINKEDIN_USERNAME')
 password = os.getenv('LINKEDIN_PASSWORD')
 
-# init driver
+# init drivers
 driver = webdriver.Chrome()
-obsidian = Obsidian("~/obsidian-test")
-
-
-# TODO: not working for some reason
-# load cookies
-# if os.path.exists(COOKIE_PATH):
-#     with open(COOKIE_PATH, "rb") as f:
-#         cookies = pickle.load(f)
-#         for cookie in cookies:
-#             driver.add_cookie(cookie)
+obsidian = Obsidian("~/obsidian-main")
 
 
 # login to linkedin
@@ -43,10 +33,6 @@ driver.find_element_by_id("password").send_keys(password)
 driver.find_element_by_id("password").send_keys(Keys.RETURN)
 time.sleep(1.5)
 
-# TODO: not working for some reason
-# save cookies
-# with open(COOKIE_PATH, "wb") as f:
-#     pickle.dump(driver.get_cookies(), f)
 
 # load list of urls from urls.txt
 urls = get_urls()
@@ -91,14 +77,6 @@ for i, url in enumerate(urls):
     except ValueError:
         print("Note already exists")
     
-#     job_post_body = f"""
-# **Company:** {job_dict["company"]}
-# **Location:** {job_dict["location"]}
-# **Date Pulled:** {datetime.today().date()}
-# [LinkedIn]({url})
-
-# {job_dict["body"]}
-    # """
 
     obsidian.new_note(
         note_path=JOB_POST_NOTE_PATH,
