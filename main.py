@@ -14,6 +14,7 @@ from obsidian.core import Obsidian
 # globals
 COOKIE_PATH = "data/cookies.txt"
 JOB_POST_NOTE_PATH = "job_descriptions/"
+COMPANY_NOTE_PATH = "companies/"
 
 username = os.getenv('LINKEDIN_USERNAME')
 password = os.getenv('LINKEDIN_PASSWORD')
@@ -56,15 +57,29 @@ for i, url in enumerate(urls):
     time.sleep(3)
 
     # click "see more"
-    driver.find_element_by_css_selector("#ember39 > span").click()
+    driver.find_element_by_css_selector("#ember38").click()
 
     # parse data from page
     job_dict = {
         "body": driver.find_element_by_id("job-details").get_attribute('innerHTML'),
         "title": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > h1").text,
-        "company": driver.find_element_by_css_selector("#ember38").text,
+        "company": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > div.mt2 > span.jobs-unified-top-card__subtitle-primary-grouping.mr2.t-black > span:nth-child(1)").text,
         "location": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > div.mt2 > span.jobs-unified-top-card__subtitle-primary-grouping.mr2.t-black > span.jobs-unified-top-card__bullet").text,
     }
+    job_dict["title"] = job_dict["title"].replace("/", "_")
+
+    # create company note if not exists
+    try:
+        obsidian.new_note(
+            note_path=COMPANY_NOTE_PATH,
+            title=job_dict["company"],
+            body=f"**Date Pulled:** {datetime.today().date()}",
+            tags=["#company"],
+            overwrite=False,
+            autolink_notes=False
+        )
+    except ValueError:
+        print("Note already exists")
 
     # format body
     job_dict["body"] = markdownify(job_dict["body"])
@@ -82,7 +97,7 @@ for i, url in enumerate(urls):
         note_path=JOB_POST_NOTE_PATH,
         title=job_dict["title"],
         body=job_post_body,
-        tags=["#linkin_bot", "#job"],
+        tags=["#job"],
         overwrite=True,
         autolink_notes=True
     )
