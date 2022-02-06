@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 selenium = "*"
+markdownify = "*"
 
 [dev-packages]
 ipython = "*"

@@ -1,21 +1,26 @@
 # from dotenv import load_dotenv
 import os
+from datetime import datetime
 from selenium import webdriver
 import time
 from selenium.webdriver.common.keys import Keys
-import pickle
+from markdownify import markdownify
+# import pickle
 
 from pkg.read_urls import get_urls
+from obsidian.core import Obsidian
 
 
 # globals
 COOKIE_PATH = "data/cookies.txt"
+JOB_POST_NOTE_PATH = "job_descriptions/"
 
 username = os.getenv('LINKEDIN_USERNAME')
 password = os.getenv('LINKEDIN_PASSWORD')
 
 # init driver
 driver = webdriver.Chrome()
+obsidian = Obsidian("~/obsidian-test")
 
 
 # TODO: not working for some reason
@@ -54,18 +59,33 @@ for i, url in enumerate(urls):
     driver.find_element_by_css_selector("#ember39 > span").click()
 
     # parse data from page
-    details = driver.find_element_by_id("job-details").text
-    title = driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > h1").text
-    company = driver.find_element_by_css_selector("#ember38").text
-    location = driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > div.mt2 > span.jobs-unified-top-card__subtitle-primary-grouping.mr2.t-black > span.jobs-unified-top-card__bullet").text
+    job_dict = {
+        "body": driver.find_element_by_id("job-details").get_attribute('innerHTML'),
+        "title": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > h1").text,
+        "company": driver.find_element_by_css_selector("#ember38").text,
+        "location": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > div.mt2 > span.jobs-unified-top-card__subtitle-primary-grouping.mr2.t-black > span.jobs-unified-top-card__bullet").text,
+    }
 
-    # write to file
-    with open(f"data/jobs/{i}.txt", 'w') as f:
-        f.write(f"{url}\n")
-        f.write(f"{title}\n")
-        f.write(f"{company}\n")
-        f.write(f"{location}\n")
-        f.write(details)
+    # format body
+    job_dict["body"] = markdownify(job_dict["body"])
+    
+    job_post_body = f"""
+**Company:** {job_dict["company"]}
+**Location:** {job_dict["location"]}
+**Date Pulled:** {datetime.today().date()}
+[LinkedIn]({url})
+
+{job_dict["body"]}
+    """
+
+    obsidian.new_note(
+        note_path=JOB_POST_NOTE_PATH,
+        title=job_dict["title"],
+        body=job_post_body,
+        tags=["#linkin_bot", "#job"],
+        overwrite=True,
+        autolink_notes=True
+    )
 
 # close session
 driver.close()
