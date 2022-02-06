@@ -50,6 +50,9 @@ for i, url in enumerate(urls):
     driver.get(url)
     time.sleep(3)
 
+    # click "see more"
+    driver.find_element_by_css_selector("#ember39 > span").click()
+
     # parse data from page
     details = driver.find_element_by_id("job-details").text
     title = driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > h1").text
