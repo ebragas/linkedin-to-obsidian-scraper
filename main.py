@@ -1,8 +1,9 @@
 # from dotenv import load_dotenv
 import os
+import time
+from string import Template
 from datetime import datetime
 from selenium import webdriver
-import time
 from selenium.webdriver.common.keys import Keys
 from markdownify import markdownify
 # import pickle
@@ -65,8 +66,17 @@ for i, url in enumerate(urls):
         "title": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > h1").text,
         "company": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > div.mt2 > span.jobs-unified-top-card__subtitle-primary-grouping.mr2.t-black > span:nth-child(1)").text,
         "location": driver.find_element_by_css_selector("body > div.application-outlet > div.authentication-outlet > div > div.job-view-layout.jobs-details > div.grid > div > div:nth-child(1) > div > div.p5 > div.mt2 > span.jobs-unified-top-card__subtitle-primary-grouping.mr2.t-black > span.jobs-unified-top-card__bullet").text,
+        "date": str(datetime.today().date()),
+        "tags": " ".join(["#job"]),
+        "url": url
     }
+
     job_dict["title"] = job_dict["title"].replace("/", "_")
+    job_dict["body"] = markdownify(job_dict["body"])
+
+    with open('job_description_template.md', 'r') as f:
+        src = Template(f.read())
+        job_dict["body"] = src.substitute(job_dict)
 
     # create company note if not exists
     try:
@@ -80,24 +90,20 @@ for i, url in enumerate(urls):
         )
     except ValueError:
         print("Note already exists")
-
-    # format body
-    job_dict["body"] = markdownify(job_dict["body"])
     
-    job_post_body = f"""
-**Company:** {job_dict["company"]}
-**Location:** {job_dict["location"]}
-**Date Pulled:** {datetime.today().date()}
-[LinkedIn]({url})
+#     job_post_body = f"""
+# **Company:** {job_dict["company"]}
+# **Location:** {job_dict["location"]}
+# **Date Pulled:** {datetime.today().date()}
+# [LinkedIn]({url})
 
-{job_dict["body"]}
-    """
+# {job_dict["body"]}
+    # """
 
     obsidian.new_note(
         note_path=JOB_POST_NOTE_PATH,
         title=job_dict["title"],
-        body=job_post_body,
-        tags=["#job"],
+        body=job_dict["body"],
         overwrite=True,
         autolink_notes=True
     )
