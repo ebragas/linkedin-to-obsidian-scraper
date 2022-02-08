@@ -10,8 +10,10 @@ i want to be able to create new notes
 - option to auto-link
 """
 
+from importlib.resources import path
 import os
 import re
+import yaml
 
 class Obsidian:
     def __init__(self, vault_root_path):
@@ -83,3 +85,62 @@ class Obsidian:
         self.note_paths.append(full_note_path)
 
         print(f"created new note: {full_note_path}")
+
+
+
+class Note:
+
+    def __init__(self, obsidian, path, name):
+        # how do i want this to work?
+        # when loading a note, my Note init should parse the contents of a given note file
+        self.obsidian = obsidian
+        self.path = path
+        self.name = name + ".md"
+        self.full_path = self._note_full_path()
+        self.header, self.tags, self.body = self._parse_note_from_md()
+
+    def _note_full_path(self):
+        """Return full file path of note"""
+        return os.path.join(os.path.expanduser(self.obsidian.vault_root_path),
+                            self.path,
+                            self.name
+                            )
+
+    def _parse_note_from_md(self):
+        """Parse the contents of note from file"""
+        with open(self.full_path, "r") as f:
+            text_lines = f.readlines()
+
+        yaml_string = ""
+        tags = []
+        body = ""
+        yaml_end_idx = 0
+
+        # parse out YAML header?
+        # if first line = ---
+        if text_lines[0] == "---\n": # then there's YAML
+
+            # find next ---
+            for i, line in enumerate(text_lines[1:]):
+                if line == "---\n":
+                    yaml_end_idx = i + 1
+                    break
+
+            # all lines between are YAML
+            yaml_string = '\n'.join(text_lines[1:yaml_end_idx])
+            header = yaml.safe_load(yaml_string)
+
+        body_lines = text_lines[yaml_end_idx + 1:]
+        
+        # drop empty lines in beginning of body
+        for i, line in enumerate(body_lines):
+            if line.strip():
+                body_lines = body_lines[i:]
+                break
+
+        body = "".join(body_lines)
+
+        # find tags
+        tags = re.findall("(#+[a-zA-Z0-9(_)]{1,})", body)
+
+        return header, tags, body
