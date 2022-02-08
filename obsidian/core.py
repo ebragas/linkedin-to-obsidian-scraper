@@ -91,13 +91,29 @@ class Obsidian:
 class Note:
 
     def __init__(self, obsidian, path, name):
-        # how do i want this to work?
-        # when loading a note, my Note init should parse the contents of a given note file
+        """Either load note components from existing file, or create new one.
+
+        obsidian: Obsidian
+        path: String relative path to note
+        name: String title of note/file name
+
+        TODO: use template for writing notes
+        """
         self.obsidian = obsidian
         self.path = path
         self.name = name + ".md"
         self.full_path = self._note_full_path()
-        self.header, self.tags, self.body = self._parse_note_from_md()
+
+        # note components
+        self.header = {}
+        self.tags = []
+        self.body = ""
+
+        if os.path.exists(self.full_path):
+            self.header, self.tags, self.body = self._parse_note_from_md()
+        else:
+            with open(self.full_path, "w") as f:
+                pass
 
     def _note_full_path(self):
         """Return full file path of note"""
@@ -108,39 +124,72 @@ class Note:
 
     def _parse_note_from_md(self):
         """Parse the contents of note from file"""
-        with open(self.full_path, "r") as f:
-            text_lines = f.readlines()
-
-        yaml_string = ""
+        header = {}
         tags = []
         body = ""
         yaml_end_idx = 0
 
-        # parse out YAML header?
-        # if first line = ---
-        if text_lines[0] == "---\n": # then there's YAML
+        with open(self.full_path, "r") as f:
+            text_lines = f.readlines()
 
-            # find next ---
-            for i, line in enumerate(text_lines[1:]):
-                if line == "---\n":
-                    yaml_end_idx = i + 1
+        if text_lines:
+
+            # parse out YAML header
+            if text_lines[0] == "---\n": # then there's YAML
+
+                # find next ---
+                for i, line in enumerate(text_lines[1:]):
+                    if line == "---\n":
+                        yaml_end_idx = i + 1
+                        break
+
+                # all lines between are YAML
+                yaml_string = '\n'.join(text_lines[1:yaml_end_idx])
+                header = yaml.safe_load(yaml_string)
+
+            body_lines = text_lines[yaml_end_idx + 1:]
+
+            # drop empty lines in beginning of body
+            for i, line in enumerate(body_lines):
+                if line.strip():
+                    body_lines = body_lines[i:]
                     break
 
-            # all lines between are YAML
-            yaml_string = '\n'.join(text_lines[1:yaml_end_idx])
-            header = yaml.safe_load(yaml_string)
+            body = "".join(body_lines)
 
-        body_lines = text_lines[yaml_end_idx + 1:]
-        
-        # drop empty lines in beginning of body
-        for i, line in enumerate(body_lines):
-            if line.strip():
-                body_lines = body_lines[i:]
-                break
-
-        body = "".join(body_lines)
-
-        # find tags
-        tags = re.findall("(#+[a-zA-Z0-9(_)]{1,})", body)
+            # find tags
+            tags = re.findall("(#+[a-zA-Z0-9(_)]{1,})", body)
 
         return header, tags, body
+
+    def _write_note(self):
+        """Write components to file
+        """
+        with open(self.full_path, "w") as f:
+            if self.header:
+                f.write("---\n")
+                yaml.dump(self.header, f, default_flow_style=None)
+                f.write("---\n\n")
+
+            if self.tags:
+                f.write(" ".join(self.tags))
+                f.write("\n" * 2)
+
+            f.write(self.body)
+
+    def update(self, body=None, tags=None, header=None):
+        """Update the note components
+        """
+        self.header = header if header else self.header
+        self.body = body if body else self.body
+        self.tags = tags if tags else self.tags
+        self._write_note()
+
+    def append(self, body, tags):
+        """Append the arguments to their corresponding note component
+        """
+        raise NotImplementedError
+
+    def delete(self):
+        """Kill with fire."""
+        os.remove(self.full_path)
