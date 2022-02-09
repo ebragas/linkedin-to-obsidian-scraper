@@ -53,7 +53,7 @@ class Obsidian:
         linked_text = text
 
         for link in link_strings:
-            linked_text = re.sub(r"\b%s\b" % link, f"[[%s]]" % link, linked_text)
+            linked_text = re.sub(r"\b%s\b" % link, r"[[%s]]" % link, linked_text)
 
         # replace and quadruple brackets w/ double brackets
         linked_text = linked_text.replace("[[[[", "[[")
