@@ -59,7 +59,7 @@ class Obsidian:
         note_path: str; relative to vault root path
         title: str; name of note/file
         body: str; markdown contents of note
-        tags: [str]; array of #tags to append to bottom of note
+        tags: [str]; array of #tags to append to note
         overwrite: bool; whether to allow existing notes to be overwritten (default False)
         autolink_notes: bool; whether to find keywords in note body that match existing notes, and turn them into internal links
 
