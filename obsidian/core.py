@@ -21,7 +21,8 @@ environment = Environment(trim_blocks=True)
 
 class Obsidian:
     def __init__(self, vault_root_path):
-        """Initialize Obsidian client for a single vault."""
+        """Initialize Obsidian client for a single vault.
+        """
         self.vault_root_path = os.path.expanduser(vault_root_path)
 
         if not os.path.isdir(self.vault_root_path):
@@ -60,7 +61,7 @@ class Obsidian:
 
         return linked_text
 
-    def new_note(self, note_path, title, body, tags=[], overwrite=False, autolink_notes=True):
+    def new_note(self, note_path, title, body, tags=[], header={}, overwrite=False, autolink_notes=True):
         """
         note_path: str; relative to vault root path
         title: str; name of note/file
@@ -73,26 +74,22 @@ class Obsidian:
         I think that's something specific to the data output by the LinkedIn bot, not to Obsidian
         KISS
         """
-        full_note_path = os.path.join(self.vault_root_path, note_path, title + '.md')
+        full_path = os.path.join(self.vault_root_path, note_path, title + '.md')
 
         # raise error if note already exists and overwrite=False
-        if os.path.exists(full_note_path) and not overwrite:
-            raise ValueError("This note already exists")
+        if os.path.exists(full_path) and not overwrite:
+            raise ValueError(f"Note already exists, {full_path}")
+
+        note = Note(self, note_path, title)
 
         if autolink_notes:
             body = self._link_text(body)
 
-        # create note
-        with open(full_note_path, 'w') as f:
-            f.write(body)
-            f.write('\n')
-            f.write(' '.join(tags))
+        note.update(body=body, tags=tags, header=header)
+        
+        print(f"Created new note: {full_path}")
 
-        self.note_paths.append(full_note_path)
-
-        print(f"created new note: {full_note_path}")
-
-
+        return note
 
 class Note:
 
