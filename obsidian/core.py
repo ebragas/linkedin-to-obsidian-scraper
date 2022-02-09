@@ -14,10 +14,14 @@ from importlib.resources import path
 import os
 import re
 import yaml
+from jinja2 import Template, Environment
+
+environment = Environment(trim_blocks=True)
+
 
 class Obsidian:
     def __init__(self, vault_root_path):
-
+        """Initialize Obsidian client for a single vault."""
         self.vault_root_path = os.path.expanduser(vault_root_path)
 
         if not os.path.isdir(self.vault_root_path):
@@ -59,7 +63,7 @@ class Obsidian:
         note_path: str; relative to vault root path
         title: str; name of note/file
         body: str; markdown contents of note
-        tags: [str]; array of #tags to append to bottom of note
+        tags: [str]; array of #tags to append to note
         overwrite: bool; whether to allow existing notes to be overwritten (default False)
         autolink_notes: bool; whether to find keywords in note body that match existing notes, and turn them into internal links
 
@@ -89,6 +93,8 @@ class Obsidian:
 
 
 class Note:
+
+    templates_dir = 'templates/'
 
     def __init__(self, obsidian, path, name):
         """Either load note components from existing file, or create new one.
@@ -162,20 +168,22 @@ class Note:
 
         return header, tags, body
 
-    def _write_note(self):
+    def _write_note(self, template='basic_note.md'):
         """Write components to file
         """
-        with open(self.full_path, "w") as f:
-            if self.header:
-                f.write("---\n")
-                yaml.dump(self.header, f, default_flow_style=None)
-                f.write("---\n\n")
+        with open(os.path.join(self.templates_dir, template), 'r') as f:
+            template = Template(f.read(), trim_blocks=True)
 
-            if self.tags:
-                f.write(" ".join(self.tags))
-                f.write("\n" * 2)
+        parameters = {
+            "header": self.header,
+            "tags": " ".join(self.tags),
+            "body": self.body
+        }
 
-            f.write(self.body)
+        note_text = template.render(parameters)
+
+        with open(self.full_path, 'w') as f:
+            f.write(note_text)
 
     def update(self, body=None, tags=None, header=None):
         """Update the note components
@@ -188,7 +196,9 @@ class Note:
     def append(self, body, tags):
         """Append the arguments to their corresponding note component
         """
-        raise NotImplementedError
+        self.body = self.body + "\n" + body
+        self.tags.append(tags)
+        self._write_note()
 
     def delete(self):
         """Kill with fire."""
