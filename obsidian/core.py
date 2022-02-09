@@ -17,7 +17,7 @@ import yaml
 
 class Obsidian:
     def __init__(self, vault_root_path):
-
+        """Initialize Obsidian client for a single vault."""
         self.vault_root_path = os.path.expanduser(vault_root_path)
 
         if not os.path.isdir(self.vault_root_path):
