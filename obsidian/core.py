@@ -28,7 +28,9 @@ class Obsidian:
             raise ValueError("Vault path does not exist")
 
         self.note_paths = self._get_all_note_paths()
-        print(f"{len(self.note_paths)} notes found")
+        self.notes = [Note(self, *os.path.split(path)) for path in self.note_paths]
+        
+        print(f"{len(self.notes)} notes found")
 
     def _get_all_note_paths(self):
         """return a data struct containing note names that can be linked to when creating new notes"""
@@ -107,7 +109,9 @@ class Note:
         """
         self.obsidian = obsidian
         self.path = path
-        self.name = name + ".md"
+        self.name = name
+        if not name.endswith(".md"):
+            self.name = self.name + ".md"
         self.full_path = self._note_full_path()
 
         # note components
@@ -120,6 +124,9 @@ class Note:
         else:
             with open(self.full_path, "w") as f:
                 pass
+
+    def __repr__(self):
+        return f"<Note: {self.path}"
 
     def _note_full_path(self):
         """Return full file path of note"""
