@@ -188,7 +188,9 @@ class Note:
     def append(self, body, tags):
         """Append the arguments to their corresponding note component
         """
-        raise NotImplementedError
+        self.body = self.body + "\n" + body
+        self.tags.append(tags)
+        self._write_note()
 
     def delete(self):
         """Kill with fire."""
